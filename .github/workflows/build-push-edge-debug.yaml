@@ -3,12 +3,12 @@ name: Build and push edge debug tag
 on:
   push:
     branches:
-      - 'main'
+      - "main"
     paths-ignore:
-      - 'docs/**'
-      - 'helm/**'
-      - 'assets/**'
-      - '**.md'
+      - "docs/**"
+      - "helm/**"
+      - "assets/**"
+      - "**.md"
 
 jobs:
   docker:
@@ -43,5 +43,5 @@ jobs:
           context: .
           file: ./Dockerfile.debug
           push: true
-          tags: parseable/parseable:edge-debug
+          tags: raynkami/parseable:edge-debug
           platforms: linux/amd64,linux/arm64

@@ -379,6 +379,16 @@ pub struct OidcConfig {
         help = "OIDC provider's host address"
     )]
     pub issuer: Url,
+
+    #[arg(
+        long = "oidc-scope",
+        name = "oidc-scope",
+        env = "OIDC_SCOPE",
+        required = false,
+        value_parser = validation::url,
+        help = "OIDC scope"
+    )]
+    pub scope: String,
 }
 
 impl Options {
@@ -399,6 +409,7 @@ impl Options {
             secret,
             client_id,
             issuer,
+            scope,
         } = self.oidc.as_ref()?;
         let origin = if let Some(url) = self.domain_address.clone() {
             oidc::Origin::Production(url)
@@ -412,6 +423,7 @@ impl Options {
             id: client_id.clone(),
             secret: secret.clone(),
             issuer: issuer.clone(),
+            scope: scope.clone(),
             origin,
         })
     }

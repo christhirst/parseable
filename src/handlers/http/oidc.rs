@@ -217,8 +217,11 @@ fn redirect_to_oidc(
     oidc_client: &DiscoveredClient,
 ) -> HttpResponse {
     let redirect = query.into_inner().redirect.to_string();
+
+    let sc = &PARSEABLE.options.oidc.as_ref().unwrap().scope;
+    let scope = format!("{} {}", OIDC_SCOPE, sc.to_owned());
     let auth_url = oidc_client.auth_url(&Options {
-        scope: Some(OIDC_SCOPE.into()),
+        scope: Some(scope),
         state: Some(redirect),
         ..Default::default()
     });

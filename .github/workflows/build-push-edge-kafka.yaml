@@ -3,12 +3,12 @@ name: Build and push edge kafka tag
 on:
   push:
     branches:
-      - 'main'
+      - "main"
     paths-ignore:
-      - 'docs/**'
-      - 'helm/**'
-      - 'assets/**'
-      - '**.md'
+      - "docs/**"
+      - "helm/**"
+      - "assets/**"
+      - "**.md"
 
 jobs:
   docker:
@@ -54,7 +54,7 @@ jobs:
           context: .
           file: ./Dockerfile.kafka
           push: true
-          tags: parseable/parseable:edge-kafka
+          tags: raynkami/parseable:edge-kafka
           platforms: linux/arm64
           build-args: |
             LIB_DIR=aarch64-linux-gnu

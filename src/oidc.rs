@@ -44,6 +44,8 @@ pub struct OpenidConfig {
     pub issuer: Url,
     /// Current client host address which will be used for redirects  
     pub origin: Origin,
+    /// Scopes will be used for getting attributes
+    pub scope: String,
 }
 
 impl OpenidConfig {
