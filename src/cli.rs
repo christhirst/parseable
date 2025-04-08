@@ -385,7 +385,6 @@ pub struct OidcConfig {
         name = "oidc-scope",
         env = "OIDC_SCOPE",
         required = false,
-        value_parser = validation::url,
         help = "OIDC scope"
     )]
     pub scope: String,
