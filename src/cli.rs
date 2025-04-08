@@ -383,7 +383,7 @@ pub struct OidcConfig {
     #[arg(
         long = "oidc-scope",
         name = "oidc-scope",
-        env = "OIDC_SCOPE",
+        env = "P_OIDC_SCOPE",
         required = false,
         help = "OIDC scope"
     )]
