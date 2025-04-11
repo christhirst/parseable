@@ -43,5 +43,5 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: raynkami/parseable:edgev0.0.1
+          tags: raynkami/parseable:edgev0.0.2
           platforms: linux/amd64,linux/arm64

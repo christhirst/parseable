@@ -23,6 +23,7 @@ use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
 };
 
+use openid::{CompactJson, CustomClaims, StandardClaims, StandardClaimsSubject};
 use rand::distributions::{Alphanumeric, DistString};
 
 use crate::parseable::PARSEABLE;
@@ -171,7 +172,30 @@ pub struct UserInfo {
     pub gender: Option<String>,
     #[serde(default)]
     pub updated_at: Option<i64>,
+    #[serde(default)]
+    pub groups: Option<Vec<String>>,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct MyClaims {
+    pub group: Option<Vec<String>>,
+    #[serde(flatten)]
+    pub standard_claims: StandardClaims,
+}
+
+impl CustomClaims for MyClaims {
+    fn standard_claims(&self) -> &StandardClaims {
+        &self.standard_claims
+    }
+}
+
+impl StandardClaimsSubject for MyClaims {
+    fn sub(&self) -> Result<&str, openid::error::StandardClaimsSubjectMissing> {
+        todo!()
+    }
+}
+
+impl CompactJson for MyClaims {}
 
 impl From<openid::Userinfo> for UserInfo {
     fn from(user: openid::Userinfo) -> Self {
@@ -182,6 +206,15 @@ impl From<openid::Userinfo> for UserInfo {
             email: user.email,
             gender: user.gender,
             updated_at: user.updated_at,
+            groups: None,
         }
     }
 }
+
+/* impl Into<openid::Userinfo> for StandardClaims {
+    fn into(self) -> openid::Userinfo {
+        // Conversion logic here
+        todo
+    }
+}
+ */

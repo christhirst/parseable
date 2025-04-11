@@ -25,7 +25,7 @@ use actix_web::{
     HttpRequest, HttpResponse,
 };
 use http::StatusCode;
-use openid::{Options, Token, Userinfo};
+use openid::{CustomClaims, Options, Token, Userinfo};
 use regex::Regex;
 use serde::Deserialize;
 use ulid::Ulid;
@@ -38,7 +38,7 @@ use crate::{
     rbac::{
         self,
         map::{SessionKey, DEFAULT_ROLE},
-        user::{self, User, UserType},
+        user::{self, MyClaims, User, UserType},
         Users,
     },
     storage::{self, ObjectStorageError, StorageMetadata},
@@ -149,22 +149,34 @@ pub async fn reply_login(
     login_query: web::Query<Login>,
 ) -> Result<HttpResponse, OIDCError> {
     let oidc_client = Data::into_inner(oidc_client);
-    let Ok((mut claims, user_info)): Result<(Claims, Userinfo), anyhow::Error> =
+    let Ok((mut claims, user_info)): Result<(Claims, MyClaims), anyhow::Error> =
         request_token(oidc_client, &login_query).await
     else {
         return Ok(HttpResponse::Unauthorized().finish());
     };
+
     let username = user_info
+        .standard_claims
+        .userinfo
         .name
         .clone()
         .expect("OIDC provider did not return a sub which is currently required.");
-    let user_info: user::UserInfo = user_info.into();
+    //let user_info: user::UserInfo = user_info.standard_claims.userinfo.into();
     let mut group: HashSet<String> = claims
         .other
         .remove("groups")
         .map(serde_json::from_value)
         .transpose()?
         .unwrap_or_default();
+    if group.is_empty() {
+        group = user_info
+            .group
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .collect();
+    }
+
     let metadata = get_metadata().await?;
     let mut role_exists = false;
     for role in metadata.roles.iter() {
@@ -188,8 +200,12 @@ pub async fn reply_login(
     // User may not exist
     // create a new one depending on state of metadata
     let user = match (Users.get_user(&username), group) {
-        (Some(user), group) => update_user_if_changed(user, group, user_info).await?,
-        (None, group) => put_user(&username, group, user_info).await?,
+        (Some(user), group) => {
+            update_user_if_changed(user, group, user_info.standard_claims.userinfo.into()).await?
+        }
+        (None, group) => {
+            put_user(&username, group, user_info.standard_claims.userinfo.into()).await?
+        }
     };
     let id = Ulid::new();
     Users.new_session(&user, SessionKey::SessionId(id));
@@ -281,7 +297,7 @@ fn cookie_username(username: &str) -> Cookie<'static> {
 async fn request_token(
     oidc_client: Arc<DiscoveredClient>,
     login_query: &Login,
-) -> anyhow::Result<(Claims, Userinfo)> {
+) -> anyhow::Result<(Claims, MyClaims)> {
     let mut token: Token<Claims> = oidc_client.request_token(&login_query.code).await?.into();
     let Some(id_token) = token.id_token.as_mut() else {
         return Err(anyhow::anyhow!("No id_token provided"));
@@ -291,7 +307,8 @@ async fn request_token(
     oidc_client.validate_token(id_token, None, None)?;
     let claims = id_token.payload().expect("payload is decoded").clone();
 
-    let userinfo = oidc_client.request_userinfo(&token).await?;
+    let userinfo: MyClaims = oidc_client.request_userinfo_custom(&token).await?;
+
     Ok((claims, userinfo))
 }
 
