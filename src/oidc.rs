@@ -62,7 +62,6 @@ impl OpenidConfig {
             }
             Origin::Production(url) => url,
         };
-
         let redirect_uri = redirect_uri.join(redirect_to).expect("valid suffix");
         DiscoveredClient::discover(self.id, self.secret, redirect_uri.to_string(), self.issuer)
             .await

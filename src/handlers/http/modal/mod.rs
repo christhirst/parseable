@@ -91,13 +91,17 @@ pub trait ParseableServer {
     {
         let oidc_client = match oidc_client {
             Some(config) => {
+                println!("#####");
                 let client = config
                     .connect(&format!("{API_BASE_PATH}/{API_VERSION}/o/code"))
                     .await?;
                 Some(Arc::new(client))
             }
 
-            None => None,
+            None => {
+                println!("##!###");
+                None
+            }
         };
 
         // get the ssl stuff

@@ -148,13 +148,15 @@ pub async fn reply_login(
     oidc_client: Data<DiscoveredClient>,
     login_query: web::Query<Login>,
 ) -> Result<HttpResponse, OIDCError> {
+    println!("+++++");
     let oidc_client = Data::into_inner(oidc_client);
+    println!("///");
     let Ok((mut claims, user_info)): Result<(Claims, MyClaims), anyhow::Error> =
         request_token(oidc_client, &login_query).await
     else {
         return Ok(HttpResponse::Unauthorized().finish());
     };
-
+    println!("+++wwww++");
     let username = user_info
         .standard_claims
         .userinfo
@@ -162,12 +164,14 @@ pub async fn reply_login(
         .clone()
         .expect("OIDC provider did not return a sub which is currently required.");
     //let user_info: user::UserInfo = user_info.standard_claims.userinfo.into();
+    println!("+++wwww++sssss");
     let mut group: HashSet<String> = claims
         .other
         .remove("groups")
         .map(serde_json::from_value)
         .transpose()?
         .unwrap_or_default();
+    println!("{:?}", group);
     if group.is_empty() {
         group = user_info
             .group
@@ -298,17 +302,25 @@ async fn request_token(
     oidc_client: Arc<DiscoveredClient>,
     login_query: &Login,
 ) -> anyhow::Result<(Claims, MyClaims)> {
+    println!("{:?}", login_query);
     let mut token: Token<Claims> = oidc_client.request_token(&login_query.code).await?.into();
+    println!("{:?}", token.id_token);
     let Some(id_token) = token.id_token.as_mut() else {
         return Err(anyhow::anyhow!("No id_token provided"));
     };
 
-    oidc_client.decode_token(id_token)?;
-    oidc_client.validate_token(id_token, None, None)?;
+    println!("oo1oo");
+    //println!("{:?}", id_token);
+    oidc_client.decode_token(id_token).unwrap();
+    println!("oo2oo");
+    /* let err = oidc_client
+        .validate_token(id_token, None, None)
+        .unwrap_err();
+    println!("{:?}", err); */
     let claims = id_token.payload().expect("payload is decoded").clone();
-
-    let userinfo: MyClaims = oidc_client.request_userinfo_custom(&token).await?;
-
+    println!("{:?}", claims);
+    let userinfo: MyClaims = oidc_client.request_userinfo_custom(&token).await.unwrap();
+    println!("{:?}", userinfo);
     Ok((claims, userinfo))
 }
 
